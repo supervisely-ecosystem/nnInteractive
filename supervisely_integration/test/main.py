@@ -5,10 +5,7 @@ import SimpleITK as sitk
 import supervisely as sly
 import torch
 from dotenv import load_dotenv
-from huggingface_hub import (
-    snapshot_download,  # Install huggingface_hub if not already installed
-)
-
+from huggingface_hub import snapshot_download
 from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
 
 # --- Download Trained Model Weights (~400MB) ---

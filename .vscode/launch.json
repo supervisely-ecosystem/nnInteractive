@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Test Current File",
+      "name": "Test",
       "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
+      "program": "${workspaceFolder}/supervisely_integration/test/main.py",
       "console": "integratedTerminal",
       "justMyCode": false,
       "env": {
