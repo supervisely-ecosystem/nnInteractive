@@ -6,4 +6,3 @@ tests/
 test_data/
 .venv/
 .DS_Store
-nnInteractive/
