@@ -1,0 +1,19 @@
+/my_model
+venv/
+.venv/
+*.pyc
+.DS_Store
+supervisely
+supervisely.env
+local.env
+app_data/
+**/__pycache__/
+benchmark/
+train/app_state.json
+models.json
+supervisely_integration/train/app_state.json
+supervisely_integration/demo/model
+
+# debug
+data
+predictions
