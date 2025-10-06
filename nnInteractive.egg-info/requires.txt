@@ -1,0 +1,9 @@
+nnunetv2>=2.6
+torch>=2.6
+acvl-utils<0.3,>=0.2.3
+batchgenerators>=0.25.1
+
+[dev]
+black
+ruff
+pre-commit

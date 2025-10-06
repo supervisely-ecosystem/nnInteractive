@@ -1,0 +1,495 @@
+Metadata-Version: 2.4
+Name: nnInteractive
+Version: 1.1.2
+Summary: Inference code for nnInteractive
+Author: Helmholtz Imaging Applied Computer Vision Lab
+Author-email: Fabian Isensee <f.isensee@dkfz-heidelberg.de>
+License:                                  Apache License
+                                   Version 2.0, January 2004
+                                http://www.apache.org/licenses/
+        
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+        
+           1. Definitions.
+        
+              "License" shall mean the terms and conditions for use, reproduction,
+              and distribution as defined by Sections 1 through 9 of this document.
+        
+              "Licensor" shall mean the copyright owner or entity authorized by
+              the copyright owner that is granting the License.
+        
+              "Legal Entity" shall mean the union of the acting entity and all
+              other entities that control, are controlled by, or are under common
+              control with that entity. For the purposes of this definition,
+              "control" means (i) the power, direct or indirect, to cause the
+              direction or management of such entity, whether by contract or
+              otherwise, or (ii) ownership of fifty percent (50%) or more of the
+              outstanding shares, or (iii) beneficial ownership of such entity.
+        
+              "You" (or "Your") shall mean an individual or Legal Entity
+              exercising permissions granted by this License.
+        
+              "Source" form shall mean the preferred form for making modifications,
+              including but not limited to software source code, documentation
+              source, and configuration files.
+        
+              "Object" form shall mean any form resulting from mechanical
+              transformation or translation of a Source form, including but
+              not limited to compiled object code, generated documentation,
+              and conversions to other media types.
+        
+              "Work" shall mean the work of authorship, whether in Source or
+              Object form, made available under the License, as indicated by a
+              copyright notice that is included in or attached to the work
+              (an example is provided in the Appendix below).
+        
+              "Derivative Works" shall mean any work, whether in Source or Object
+              form, that is based on (or derived from) the Work and for which the
+              editorial revisions, annotations, elaborations, or other modifications
+              represent, as a whole, an original work of authorship. For the purposes
+              of this License, Derivative Works shall not include works that remain
+              separable from, or merely link (or bind by name) to the interfaces of,
+              the Work and Derivative Works thereof.
+        
+              "Contribution" shall mean any work of authorship, including
+              the original version of the Work and any modifications or additions
+              to that Work or Derivative Works thereof, that is intentionally
+              submitted to Licensor for inclusion in the Work by the copyright owner
+              or by an individual or Legal Entity authorized to submit on behalf of
+              the copyright owner. For the purposes of this definition, "submitted"
+              means any form of electronic, verbal, or written communication sent
+              to the Licensor or its representatives, including but not limited to
+              communication on electronic mailing lists, source code control systems,
+              and issue tracking systems that are managed by, or on behalf of, the
+              Licensor for the purpose of discussing and improving the Work, but
+              excluding communication that is conspicuously marked or otherwise
+              designated in writing by the copyright owner as "Not a Contribution."
+        
+              "Contributor" shall mean Licensor and any individual or Legal Entity
+              on behalf of whom a Contribution has been received by Licensor and
+              subsequently incorporated within the Work.
+        
+           2. Grant of Copyright License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              copyright license to reproduce, prepare Derivative Works of,
+              publicly display, publicly perform, sublicense, and distribute the
+              Work and such Derivative Works in Source or Object form.
+        
+           3. Grant of Patent License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              (except as stated in this section) patent license to make, have made,
+              use, offer to sell, sell, import, and otherwise transfer the Work,
+              where such license applies only to those patent claims licensable
+              by such Contributor that are necessarily infringed by their
+              Contribution(s) alone or by combination of their Contribution(s)
+              with the Work to which such Contribution(s) was submitted. If You
+              institute patent litigation against any entity (including a
+              cross-claim or counterclaim in a lawsuit) alleging that the Work
+              or a Contribution incorporated within the Work constitutes direct
+              or contributory patent infringement, then any patent licenses
+              granted to You under this License for that Work shall terminate
+              as of the date such litigation is filed.
+        
+           4. Redistribution. You may reproduce and distribute copies of the
+              Work or Derivative Works thereof in any medium, with or without
+              modifications, and in Source or Object form, provided that You
+              meet the following conditions:
+        
+              (a) You must give any other recipients of the Work or
+                  Derivative Works a copy of this License; and
+        
+              (b) You must cause any modified files to carry prominent notices
+                  stating that You changed the files; and
+        
+              (c) You must retain, in the Source form of any Derivative Works
+                  that You distribute, all copyright, patent, trademark, and
+                  attribution notices from the Source form of the Work,
+                  excluding those notices that do not pertain to any part of
+                  the Derivative Works; and
+        
+              (d) If the Work includes a "NOTICE" text file as part of its
+                  distribution, then any Derivative Works that You distribute must
+                  include a readable copy of the attribution notices contained
+                  within such NOTICE file, excluding those notices that do not
+                  pertain to any part of the Derivative Works, in at least one
+                  of the following places: within a NOTICE text file distributed
+                  as part of the Derivative Works; within the Source form or
+                  documentation, if provided along with the Derivative Works; or,
+                  within a display generated by the Derivative Works, if and
+                  wherever such third-party notices normally appear. The contents
+                  of the NOTICE file are for informational purposes only and
+                  do not modify the License. You may add Your own attribution
+                  notices within Derivative Works that You distribute, alongside
+                  or as an addendum to the NOTICE text from the Work, provided
+                  that such additional attribution notices cannot be construed
+                  as modifying the License.
+        
+              You may add Your own copyright statement to Your modifications and
+              may provide additional or different license terms and conditions
+              for use, reproduction, or distribution of Your modifications, or
+              for any such Derivative Works as a whole, provided Your use,
+              reproduction, and distribution of the Work otherwise complies with
+              the conditions stated in this License.
+        
+           5. Submission of Contributions. Unless You explicitly state otherwise,
+              any Contribution intentionally submitted for inclusion in the Work
+              by You to the Licensor shall be under the terms and conditions of
+              this License, without any additional terms or conditions.
+              Notwithstanding the above, nothing herein shall supersede or modify
+              the terms of any separate license agreement you may have executed
+              with Licensor regarding such Contributions.
+        
+           6. Trademarks. This License does not grant permission to use the trade
+              names, trademarks, service marks, or product names of the Licensor,
+              except as required for reasonable and customary use in describing the
+              origin of the Work and reproducing the content of the NOTICE file.
+        
+           7. Disclaimer of Warranty. Unless required by applicable law or
+              agreed to in writing, Licensor provides the Work (and each
+              Contributor provides its Contributions) on an "AS IS" BASIS,
+              WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+              implied, including, without limitation, any warranties or conditions
+              of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+              PARTICULAR PURPOSE. You are solely responsible for determining the
+              appropriateness of using or redistributing the Work and assume any
+              risks associated with Your exercise of permissions under this License.
+        
+           8. Limitation of Liability. In no event and under no legal theory,
+              whether in tort (including negligence), contract, or otherwise,
+              unless required by applicable law (such as deliberate and grossly
+              negligent acts) or agreed to in writing, shall any Contributor be
+              liable to You for damages, including any direct, indirect, special,
+              incidental, or consequential damages of any character arising as a
+              result of this License or out of the use or inability to use the
+              Work (including but not limited to damages for loss of goodwill,
+              work stoppage, computer failure or malfunction, or any and all
+              other commercial damages or losses), even if such Contributor
+              has been advised of the possibility of such damages.
+        
+           9. Accepting Warranty or Additional Liability. While redistributing
+              the Work or Derivative Works thereof, You may choose to offer,
+              and charge a fee for, acceptance of support, warranty, indemnity,
+              or other liability obligations and/or rights consistent with this
+              License. However, in accepting such obligations, You may act only
+              on Your own behalf and on Your sole responsibility, not on behalf
+              of any other Contributor, and only if You agree to indemnify,
+              defend, and hold each Contributor harmless for any liability
+              incurred by, or claims asserted against, such Contributor by reason
+              of your accepting any such warranty or additional liability.
+        
+           END OF TERMS AND CONDITIONS
+        
+           APPENDIX: How to apply the Apache License to your work.
+        
+              To apply the Apache License to your work, attach the following
+              boilerplate notice, with the fields enclosed by brackets "[]"
+              replaced with your own identifying information. (Don't include
+              the brackets!)  The text should be enclosed in the appropriate
+              comment syntax for the file format. We also recommend that a
+              file or class name and description of purpose be included on the
+              same "printed page" as the copyright notice for easier
+              identification within third-party archives.
+        
+           Copyright [2019] [Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany]
+        
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+        
+               http://www.apache.org/licenses/LICENSE-2.0
+        
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+Project-URL: homepage, https://github.com/MIC-DKFZ/nnInteractive
+Keywords: deep learning,image segmentation,semantic segmentation,medical image analysis,medical image segmentation,nnU-Net,nnunet
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Healthcare Industry
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Image Recognition
+Classifier: Topic :: Scientific/Engineering :: Medical Science Apps.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: nnunetv2>=2.6
+Requires-Dist: torch>=2.6
+Requires-Dist: acvl-utils<0.3,>=0.2.3
+Requires-Dist: batchgenerators>=0.25.1
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: pre-commit; extra == "dev"
+Dynamic: license-file
+
+<img src="imgs/nnInteractive_header_white.png">
+
+# Python backend for `nnInteractive: Redefining 3D Promptable Segmentation`
+
+This repository provides the official Python backend for `nnInteractive`, a state-of-the-art framework for 3D promptable segmentation. It is designed for seamless integration into Python-based workflows—ideal for researchers, developers, and power users working directly with code.
+
+`nnInteractive` is also available through graphical viewers (GUI) for those who prefer a visual workflow. The napari and MITK integrations are developed and maintained by our team. Thanks to the community for contributing the 3D Slicer extension!
+
+
+<div align="center">
+
+| **<div align="center">[napari plugin](https://github.com/MIC-DKFZ/napari-nninteractive)</div>** | **<div align="center">[MITK integration](https://www.mitk.org/wiki/MITK-nnInteractive)</div>** | **<div align="center">[3D Slicer extension](https://github.com/coendevente/SlicerNNInteractive)</div>** | **<div align="center">[ITK-SNAP extension](https://itksnap-dls.readthedocs.io/en/latest/quick_start.html)</div>** |
+|-------------------|----------------------|-------------------------|-------------------------|
+| [<img src="imgs/Logos/napari.jpg" height="200">](https://github.com/MIC-DKFZ/napari-nninteractive) | [<img src="imgs/Logos/mitk.jpg" height="200">](https://www.mitk.org/wiki/MITK-nnInteractive) | [<img src="imgs/Logos/3DSlicer.png" height="200">](https://github.com/coendevente/SlicerNNInteractive) | [<img src="imgs/Logos/snaplogo_sq.png" height="200">](https://itksnap-dls.readthedocs.io/en/latest/quick_start.html) |
+
+</div>
+
+
+## 📰 News
+
+- **07/2025**: 🧩 New ITK-SNAP extension released! Try nnInteractive directly in ITK-SNAP 👉 [Quick Start](https://itksnap-dls.readthedocs.io/en/latest/quick_start.html)
+- **06/2025**: 🏆 We’re thrilled to announce that `nnInteractive` **won the 1st place** in the [CVPR 2025 Challenge on Interactive 3D Segmentation](https://www.codabench.org/competitions/5263/). Huge shoutout to the organizers and all contributors!
+- **05/2025**: `nnInteractive` presents an **official baseline** at **CVPR 2025** in the _Foundation Models for Interactive 3D Biomedical Image Segmentation Challenge_ ([Codabench link](https://www.codabench.org/competitions/5263/)) → see [`nnInteractive/inference/cvpr2025_challenge_baseline`](nnInteractive/inference/cvpr2025_challenge_baseline)
+- **04/2025**: 🎉 The **community contributed a 3D Slicer integration** – thank you! 👉 [SlicerNNInteractive](https://github.com/coendevente/SlicerNNInteractive)
+- **03/2025**: 🚀 `nnInteractive` **launched** with native support for **napari** and **MITK**
+
+---
+
+
+## What is nnInteractive?
+
+> Isensee, F.\*, Rokuss, M.\*, Krämer, L.\*, Dinkelacker, S., Ravindran, A., Stritzke, F., Hamm, B., Wald, T., Langenberg, M., Ulrich, C., Deissler, J., Floca, R., & Maier-Hein, K. (2025). nnInteractive: Redefining 3D Promptable Segmentation. https://arxiv.org/abs/2503.08373 \
+> *: equal contribution
+
+Link: [![arXiv](https://img.shields.io/badge/arXiv-2503.08373-b31b1b.svg)](https://arxiv.org/abs/2503.08373)
+
+
+##### Abstract:
+
+Accurate and efficient 3D segmentation is essential for both clinical and research applications. While foundation 
+models like SAM have revolutionized interactive segmentation, their 2D design and domain shift limitations make them 
+ill-suited for 3D medical images. Current adaptations address some of these challenges but remain limited, either 
+lacking volumetric awareness, offering restricted interactivity, or supporting only a small set of structures and 
+modalities. Usability also remains a challenge, as current tools are rarely integrated into established imaging 
+platforms and often rely on cumbersome web-based interfaces with restricted functionality. We introduce nnInteractive, 
+the first comprehensive 3D interactive open-set segmentation method. It supports diverse prompts—including points, 
+scribbles, boxes, and a novel lasso prompt—while leveraging intuitive 2D interactions to generate full 3D 
+segmentations. Trained on 120+ diverse volumetric 3D datasets (CT, MRI, PET, 3D Microscopy, etc.), nnInteractive 
+sets a new state-of-the-art in accuracy, adaptability, and usability. Crucially, it is the first method integrated 
+into widely used image viewers (e.g., Napari, MITK), ensuring broad accessibility for real-world clinical and research 
+applications. Extensive benchmarking demonstrates that nnInteractive far surpasses existing methods, setting a new 
+standard for AI-driven interactive 3D segmentation.
+
+<img src="imgs/figure1_method.png" width="1200">
+
+
+## Installation
+
+### Prerequisites
+
+You need a Linux or Windows computer with a Nvidia GPU. 10GB of VRAM is recommended. Small objects should work with \<6GB.
+
+##### 1. Create a virtual environment:
+
+nnInteractive supports Python 3.10+ and works with Conda, pip, or any other virtual environment. Here’s an example using Conda:
+
+```
+conda create -n nnInteractive python=3.12
+conda activate nnInteractive
+```
+
+##### 2. Install the correct PyTorch for your system
+
+Go to the [PyTorch homepage](https://pytorch.org/get-started/locally/) and pick the right configuration.
+Note that since recently PyTorch needs to be installed via pip. This is fine to do within your conda environment.
+
+For Ubuntu with a Nvidia GPU, pick 'stable', 'Linux', 'Pip', 'Python', 'CUDA12.6' (if all drivers are up to date, otherwise use and older version):
+
+```
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+```
+
+##### 3. Install this repository
+Either install via pip:
+`pip install nninteractive`
+
+Or clone and install this repository:
+```bash
+git clone https://github.com/MIC-DKFZ/nnInteractive
+cd nnInteractive
+pip install -e .
+```
+
+## Getting Started
+Here is a minimalistic script that covers the core functionality of nnInteractive:
+
+```python
+import os
+import torch
+import SimpleITK as sitk
+from huggingface_hub import snapshot_download  # Install huggingface_hub if not already installed
+
+# --- Download Trained Model Weights (~400MB) ---
+REPO_ID = "nnInteractive/nnInteractive"
+MODEL_NAME = "nnInteractive_v1.0"  # Updated models may be available in the future
+DOWNLOAD_DIR = "/home/isensee/temp"  # Specify the download directory
+
+download_path = snapshot_download(
+    repo_id=REPO_ID,
+    allow_patterns=[f"{MODEL_NAME}/*"],
+    local_dir=DOWNLOAD_DIR
+)
+
+# The model is now stored in DOWNLOAD_DIR/MODEL_NAME.
+
+# --- Initialize Inference Session ---
+from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
+
+session = nnInteractiveInferenceSession(
+    device=torch.device("cuda:0"),  # Set inference device
+    use_torch_compile=False,  # Experimental: Not tested yet
+    verbose=False,
+    torch_n_threads=os.cpu_count(),  # Use available CPU cores
+    do_autozoom=True,  # Enables AutoZoom for better patching
+    use_pinned_memory=True,  # Optimizes GPU memory transfers
+)
+
+# Load the trained model
+model_path = os.path.join(DOWNLOAD_DIR, MODEL_NAME)
+session.initialize_from_trained_model_folder(model_path)
+
+# --- Load Input Image (Example with SimpleITK) ---
+# DO NOT preprocess the image in any way. Give it to nnInteractive as it is! DO NOT apply level window, DO NOT normalize 
+# intensities and never ever convert an image with higher precision (float32, uint16, etc) to uint8!
+# The ONLY instance where some preprocesing makes sense is if your original image is too large to be reasonably used. 
+# This may be the case, for example, for some microCT images. In this case you can consider downsampling.
+input_image = sitk.ReadImage("FILENAME")
+img = sitk.GetArrayFromImage(input_image)[None]  # Ensure shape (1, x, y, z)
+
+# Validate input dimensions
+if img.ndim != 4:
+    raise ValueError("Input image must be 4D with shape (1, x, y, z)")
+
+session.set_image(img)
+
+# --- Define Output Buffer ---
+target_tensor = torch.zeros(img.shape[1:], dtype=torch.uint8)  # Must be 3D (x, y, z)
+session.set_target_buffer(target_tensor)
+
+# --- Interacting with the Model ---
+# Interactions can be freely chained and mixed in any order. Each interaction refines the segmentation.
+# The model updates the segmentation mask in the target buffer after every interaction.
+
+# Example: Add a **positive** point interaction
+# POINT_COORDINATES should be a tuple (x, y, z) specifying the point location.
+session.add_point_interaction(POINT_COORDINATES, include_interaction=True)
+
+# Example: Add a **negative** point interaction
+# To make any interaction negative set include_interaction=False
+session.add_point_interaction(POINT_COORDINATES, include_interaction=False)
+
+# Example: Add a bounding box interaction
+# BBOX_COORDINATES must be specified as [[x1, x2], [y1, y2], [z1, z2]] (half-open intervals).
+# Note: nnInteractive pre-trained models currently only support **2D bounding boxes**.
+# This means that **one dimension must be [d, d+1]** to indicate a single slice.
+
+# Example of a 2D bounding box in the axial plane (XY slice at depth Z)
+# BBOX_COORDINATES = [[30, 80], [40, 100], [10, 11]]  # X: 30-80, Y: 40-100, Z: slice 10
+
+session.add_bbox_interaction(BBOX_COORDINATES, include_interaction=True)
+
+# Example: Add a scribble interaction
+# - A 3D image of the same shape as img where one slice (any axis-aligned orientation) contains a hand-drawn scribble.
+# - Background must be 0, and scribble must be 1.
+# - Use session.preferred_scribble_thickness for optimal results.
+session.add_scribble_interaction(SCRIBBLE_IMAGE, include_interaction=True)
+
+# Example: Add a lasso interaction
+# - Similarly to scribble a 3D image with a single slice containing a **closed contour** representing the selection.
+session.add_lasso_interaction(LASSO_IMAGE, include_interaction=True)
+
+# You can combine any number of interactions as needed. 
+# The model refines the segmentation result incrementally with each new interaction.
+
+# --- Retrieve Results ---
+# The target buffer holds the segmentation result.
+results = session.target_buffer.clone()
+# OR (equivalent)
+results = target_tensor.clone()
+
+# Cloning is required because the buffer will be **reused** for the next object.
+# Alternatively, set a new target buffer for each object:
+session.set_target_buffer(torch.zeros(img.shape[1:], dtype=torch.uint8))
+
+# --- Start a New Object Segmentation ---
+session.reset_interactions()  # Clears the target buffer and resets interactions
+
+# Now you can start segmenting the next object in the image.
+
+# --- Set a New Image ---
+# Setting a new image also requires setting a new matching target buffer
+session.set_image(NEW_IMAGE)
+session.set_target_buffer(torch.zeros(NEW_IMAGE.shape[1:], dtype=torch.uint8))
+
+# Enjoy!
+```
+
+## nnInteractive SuperVoxels
+
+As part of the `nnInteractive` framework, we provide a dedicated module for **supervoxel generation** based on [SAM](https://github.com/facebookresearch/segment-anything) and [SAM2](https://github.com/facebookresearch/sam2). This replaces traditional superpixel methods (e.g., SLIC) with **foundation model–powered 3D pseudo-labels**.
+
+🔗 **Module:** [`nnInteractive/supervoxel/`](nnInteractive/supervoxel)
+
+The SuperVoxel module allows you to:
+
+- Automatically generate high-quality 3D supervoxels via axial sampling + SAM segmentation and SAM2 mask propagation.
+- Use the generated supervoxels as **pseudo-ground-truth labels** to train promptable 3D segmentation models like `nnInteractive`.
+- Export `nnUNet`-compatible `.pkl` foreground prompts for downstream use.
+
+For detailed installation, configuration, and usage instructions, check the [SuperVoxel README](nnInteractive/supervoxel/README.md).
+
+
+## Citation
+When using nnInteractive, please cite the following paper:
+
+> Isensee, F.\*, Rokuss, M.\*, Krämer, L.\*, Dinkelacker, S., Ravindran, A., Stritzke, F., Hamm, B., Wald, T., Langenberg, M., Ulrich, C., Deissler, J., Floca, R., & Maier-Hein, K. (2025). nnInteractive: Redefining 3D Promptable Segmentation. https://arxiv.org/abs/2503.08373 \
+> *: equal contribution
+
+Link: [![arXiv](https://img.shields.io/badge/arXiv-2503.08373-b31b1b.svg)](https://arxiv.org/abs/2503.08373)
+
+
+# License
+Note that while this repository is available under Apache-2.0 license (see [LICENSE](./LICENSE)), the [model checkpoint](https://huggingface.co/nnInteractive/nnInteractive) is `Creative Commons Attribution Non Commercial Share Alike 4.0`! 
+
+# Changelog
+
+### 1.1.2 - 2025-08-02
+
+- Fixed a bug where `pin_memory` was set to `True` even though no CUDA devices were present (this broke CPU support)
+- ✅ API compatible all the way back to 1.0.1
+
+### 1.1.1 - 2025-08-01
+
+- We now detect whether linux kernel 6.11 is used and disable pin_memory in that case. See also [here](https://github.com/MIC-DKFZ/nnInteractive/issues/18)
+- ✅ API compatible with 1.0.1 and 1.1.0
+
+### 1.1.0 - 2025-08-01
+
+- Reworked inference code. It's now well-structured and easier to follow.
+- Fixed bugs that 
+  - sometimes caused blocky predictions
+  - may cause failure to update segmentation map if changes were minor and AutoZoom was triggered
+- ✅ API compatible with 1.0.1
+
+## Acknowledgments
+
+<p align="left">
+  <img src="imgs/Logos/HI_Logo.png" width="150"> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="imgs/Logos/DKFZ_Logo.png" width="500">
+</p>
+
+This repository is developed and maintained by the Applied Computer Vision Lab (ACVL)
+of [Helmholtz Imaging](https://www.helmholtz-imaging.de/) and the 
+[Division of Medical Image Computing](https://www.dkfz.de/en/medical-image-computing) at DKFZ.
