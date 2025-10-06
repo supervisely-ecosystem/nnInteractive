@@ -49,7 +49,7 @@ RUN pip install --no-cache-dir tensorrt-cu12==10.9.0.34
 RUN pip install --no-cache-dir setuptools==69.5.1 tensorboard imgaug==0.4.0
 RUN pip install --no-cache-dir huggingface-hub==0.35.3
 
-RUN git clone git+https://github.com/MIC-DKFZ/nnInteractive.git
+RUN git clone https://github.com/MIC-DKFZ/nnInteractive.git
 RUN cd nnInteractive && pip install --no-cache-dir -e . && cd ..
 # RUN pip install --no-cache-dir nnunetv2>=2.6 batchgenerators>=0.25.1
 # RUN pip install --no-cache-dir acvl-utils==0.2.3
