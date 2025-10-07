@@ -1,0 +1,12 @@
+[
+    {
+        "Model": "nnInteractive_v1.0",
+        "meta": {
+            "task_type": "instance segmentation",
+            "model_name": "nnInteractive_v1.0",
+            "model_files": {
+                "checkpoint": "nnInteractive/nnInteractive/nnInteractive_v1.0"
+            }
+        }
+    }
+]

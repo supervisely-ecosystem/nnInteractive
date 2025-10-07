@@ -1,5 +1,7 @@
 **/__pycache__/
 supervisely.env
+supervisely/
+supervisely
 debug.env
 previews/
 tests/

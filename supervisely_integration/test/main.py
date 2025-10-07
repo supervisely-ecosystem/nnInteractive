@@ -20,6 +20,14 @@ api = sly.Api.from_env()
 project_id = 4068
 volume_id = 1639941
 volume_info = api.volume.get_info_by_id(volume_id)
+project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
+test_cls = project_meta.get_obj_class("test")
+if test_cls is None:
+    test_cls = sly.ObjClass("test", sly.Mask3D)
+    project_meta = project_meta.add_obj_class(test_cls)
+    project_meta = api.project.update_meta(project_id, project_meta)
+
+
 nrrd_path = Path(DOWNLOAD_DIR) / volume_info.name
 if not nrrd_path.exists():
     api.volume.download_path(volume_id, str(nrrd_path))
@@ -60,8 +68,8 @@ session.initialize_from_trained_model_folder(model_path)
 # The ONLY instance where some preprocesing makes sense is if your original image is too large to be reasonably used.
 # This may be the case, for example, for some microCT images. In this case you can consider downsampling.
 input_image = sitk.ReadImage(nrrd_path)
-img = sitk.GetArrayFromImage(input_image)[None] # np 1, z, x, y
-# img = img.transpose(0, 2, 3, 1)  # to 1, x, y, z
+img = sitk.GetArrayFromImage(input_image)  # (139, 512, 512)
+img = img.transpose(2, 1, 0)[None]  # to (1, 512, 512, 139)
 
 # Validate input dimensions
 if img.ndim != 4:
@@ -79,46 +87,27 @@ session.set_target_buffer(target_tensor)
 
 # Example: Add a **positive** point interaction
 # POINT_COORDINATES should be a tuple (x, y, z) specifying the point location.
-POSITIVE_POINTS = [
-    # (100, 125, 127),
-    # (30, 125, 127),
-    # (90, 65, 127),
-    # (40, 65, 127),
-    (80, 284, 275),
-    (80, 206, 320),
-    (80, 248, 325),
-    (80, 217, 261),
-    (80, 234, 242),
-    (80, 266, 263),
-    # (211, 292, 69),
-    # (207, 348, 69),
-    # (246, 313, 72),
-    # (249, 277, 74),
-    # (264, 274, 78),
-]  # Example coordinates
-for POINT in POSITIVE_POINTS:
-    session.add_point_interaction(POINT, include_interaction=True)
+# POSITIVE_POINTS = [
+#     (284, 275, 80),
+#     (206, 320, 80),
+#     (248, 325, 80),
+#     (217, 261, 80),
+#     (234, 242, 80),
+#     (266, 263, 80),
+# ]  # Example coordinates
+# for POINT in POSITIVE_POINTS:
+#     session.add_point_interaction(POINT, include_interaction=True)
 
-NEGATIVE_POINTS = [
-    # (111, 147, 127),
-    # (118, 106, 127),
-    # (104, 48, 127),
-    # (80, 23, 127),
-    # (41, 30, 127),
-    # (27, 47, 127),
-    # (12, 94, 127),
-    # (13, 123, 127),
-    # (52, 158, 127),
-    # (82, 157, 127),
-    (80, 285, 371),
-    (80, 327, 270),
-    (80, 271, 210),
-    (80, 167, 200),
-    (80, 150, 335),
-    (80, 207, 377),
-]  # Example coordinates
-for POINT in NEGATIVE_POINTS:
-    session.add_point_interaction(POINT, include_interaction=False)
+# NEGATIVE_POINTS = [
+#     (285, 371, 80),
+#     (327, 270, 80),
+#     (271, 210, 80),
+#     (167, 200, 80),
+#     (150, 335, 80),
+#     (207, 377, 80),
+# ]  # Example coordinates
+# for POINT in NEGATIVE_POINTS:
+#     session.add_point_interaction(POINT, include_interaction=False)
 # # Example: Add a **negative** point interaction
 # # To make any interaction negative set include_interaction=False
 # session.add_point_interaction(POINT_COORDINATES, include_interaction=False)
@@ -141,7 +130,31 @@ for POINT in NEGATIVE_POINTS:
 
 # # Example: Add a lasso interaction
 # # - Similarly to scribble a 3D image with a single slice containing a **closed contour** representing the selection.
-# session.add_lasso_interaction(LASSO_IMAGE, include_interaction=True)
+LASSO_IMAGE = np.zeros(img.shape[1:], dtype=np.uint8)
+
+ann = api.volume.annotation.download(volume_id)
+key_id_map = sly.KeyIdMap()
+ann = sly.VolumeAnnotation.from_json(ann, project_meta, key_id_map)
+figure = ann.figures[0]
+vol_dimensions = volume_info.meta["dimensionsIJK"]  # {'x': 512, 'y': 512, 'z': 139}
+geometry: sly.Bitmap = figure.geometry
+if figure.plane_name == sly.Plane.AXIAL:
+    mask_shape = (vol_dimensions["x"], vol_dimensions["y"])
+    mask = geometry.get_mask(mask_shape).astype(np.uint8)
+    LASSO_IMAGE[:, :, figure.slice_index] = mask.T
+elif figure.plane_name == sly.Plane.CORONAL:
+    mask_shape = (vol_dimensions["x"], vol_dimensions["z"])
+    mask = geometry.get_mask(mask_shape).astype(np.uint8)
+    LASSO_IMAGE[:, figure.slice_index, :] = mask.T
+elif figure.plane_name == sly.Plane.SAGITTAL:
+    mask_shape = (vol_dimensions["y"], vol_dimensions["z"])
+    mask = geometry.get_mask(mask_shape).astype(np.uint8)
+    LASSO_IMAGE[figure.slice_index, :, :] = mask.T
+else:
+    raise ValueError(f"Unsupported plane_name: {figure.plane_name}")
+# mask = geometry.get_mask(mask_shape)
+# mask_img = img[0, :, :, figure.slice_index]
+session.add_lasso_interaction(LASSO_IMAGE, include_interaction=True)
 
 # You can combine any number of interactions as needed.
 # The model refines the segmentation result incrementally with each new interaction.
@@ -165,16 +178,9 @@ results = target_tensor.clone()
 # -----------------------------------------------------------------------------
 # Save results as NRRD
 # Example: Save results as Sly Annotation
-res  = results.numpy().astype('uint8') # z, x, y
-res = res.transpose(1, 2, 0) # to x, y, z
+res = results.numpy().astype("uint8")
 volume_info = api.volume.get_info_by_id(volume_id)
 mask = sly.Mask3D(data=res > 0, volume_header=volume_meta)
-project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
-test_cls = project_meta.get_obj_class("test")
-if test_cls is None:
-    test_cls = sly.ObjClass("test", sly.Mask3D)
-    project_meta = project_meta.add_obj_class(test_cls)
-    project_meta = api.project.update_meta(project_id, project_meta)
 
 # ann = api.volume.annotation.download(volume_id)
 obj = sly.VolumeObject(obj_class=test_cls, mask_3d=mask)
