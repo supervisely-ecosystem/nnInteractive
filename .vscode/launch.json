@@ -14,7 +14,7 @@
     },
     {
       "name": "Run Uvicorn",
-      "type": "debugpy",
+      "type": "python",
       "request": "launch",
       "module": "uvicorn",
       "args": [
@@ -35,7 +35,7 @@
     },
     {
             "name": "Advanced mode for Supervisely Team",
-            "type": "debugpy",
+            "type": "python",
             "cwd": "${workspaceFolder}",
             "request": "launch",
             "module": "uvicorn",

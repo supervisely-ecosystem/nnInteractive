@@ -105,6 +105,7 @@ class nnInteractiveSlyInference(Inference):
     REPO_ID = "nnInteractive/nnInteractive"
     MODEL_NAME = "nnInteractive_v1.0"  # Updated models may be available in the future
     FRAMEWORK_NAME = "nnInteractive"
+    MODELS = "supervisely_integration/models.json"
 
     def __init__(self, *args, **kwargs):
         self.class_names = ["object_mask"]
