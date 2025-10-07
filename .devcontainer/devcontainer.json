@@ -1,7 +1,7 @@
 {
     "name": "nnInteractive Dev Container",
     "build": {
-        "dockerfile": "../docker/Dockerfile"
+        "dockerfile": "./Dockerfile"
     },
     "customizations": {
         "vscode": {
