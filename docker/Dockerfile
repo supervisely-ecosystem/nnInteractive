@@ -36,7 +36,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Dependencies
 RUN pip3 install --no-cache-dir setuptools==69.5.1
-RUN pip3 install --no-cache-dirnnInteractive
+RUN pip3 install --no-cache-dir nnInteractive
 RUN pip3 install --no-cache-dir supervisely==6.73.447
 
 LABEL python_sdk_version=6.73.447
