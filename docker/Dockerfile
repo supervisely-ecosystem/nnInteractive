@@ -21,11 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ##############################################################################
 # Miniconda & python 3.12
 ##############################################################################
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-py312_25.7.0-2-Linux-x86_64.sh -o /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -bfp /usr/local \
     && rm -rf /tmp/miniconda.sh \
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
     && conda install -y python=3.12
 
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
