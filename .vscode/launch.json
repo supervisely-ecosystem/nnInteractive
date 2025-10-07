@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "Test",
-      "type": "debugpy",
+      "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/supervisely_integration/test/main.py",
       "console": "integratedTerminal",
