@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 
 import SimpleITK as sitk
+import numpy as np
 import supervisely as sly
 import torch
 from dotenv import load_dotenv
-from huggingface_hub import snapshot_download
 from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
 
 # --- Download Trained Model Weights (~400MB) ---
@@ -17,29 +17,33 @@ Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
 load_dotenv("supervisely.env")
 api = sly.Api.from_env()
 
-nrrd_path = "./test_data/MRHead.nrrd"
 project_id = 4068
 volume_id = 1639941
-api.volume.download_path(volume_id, nrrd_path)
-volume_np, volume_meta = sly.volume.read_nrrd_serie_volume_np(nrrd_path)
+volume_info = api.volume.get_info_by_id(volume_id)
+nrrd_path = Path(DOWNLOAD_DIR) / volume_info.name
+if not nrrd_path.exists():
+    api.volume.download_path(volume_id, str(nrrd_path))
+volume_np, volume_meta = sly.volume.read_nrrd_serie_volume_np(str(nrrd_path))
 
 
 # -----------------------------------------------------------------------------
 # --- Download the model from Hugging Face ------------------------------------
 # -----------------------------------------------------------------------------
-download_path = snapshot_download(
-    repo_id=REPO_ID, allow_patterns=[f"{MODEL_NAME}/*"], local_dir=DOWNLOAD_DIR
-)
+if not Path(DOWNLOAD_DIR, MODEL_NAME).exists():
+    from huggingface_hub import snapshot_download
+    download_path = snapshot_download(
+        repo_id=REPO_ID, allow_patterns=[f"{MODEL_NAME}/*"], local_dir=DOWNLOAD_DIR
+    )
 
 
 # -----------------------------------------------------------------------------
 # --- Initialize Inference Session --------------------------------------------
 # -----------------------------------------------------------------------------
 session = nnInteractiveInferenceSession(
-    device=torch.device("cpu"),  # Set inference device
+    device=torch.device("cuda:0"),  # Set inference device
     use_torch_compile=False,  # Experimental: Not tested yet
     verbose=False,
-    torch_n_threads=4,  # Use 4 CPU cores
+    torch_n_threads=os.cpu_count(),  # Use all available CPU cores
     do_autozoom=True,  # Enables AutoZoom for better patching
     use_pinned_memory=True,  # Optimizes GPU memory transfers
 )
@@ -55,10 +59,9 @@ session.initialize_from_trained_model_folder(model_path)
 # intensities and never ever convert an image with higher precision (float32, uint16, etc) to uint8!
 # The ONLY instance where some preprocesing makes sense is if your original image is too large to be reasonably used.
 # This may be the case, for example, for some microCT images. In this case you can consider downsampling.
-input_image = sitk.ReadImage(
-    "/Users/almaz/Downloads/4068_Demo volumes/4068_Demo volumes/ds1/volume/MRHead.nrrd"
-)
-img = sitk.GetArrayFromImage(input_image)[None]  # Ensure shape (1, x, y, z)
+input_image = sitk.ReadImage(nrrd_path)
+img = sitk.GetArrayFromImage(input_image)[None] # np 1, z, x, y
+# img = img.transpose(0, 2, 3, 1)  # to 1, x, y, z
 
 # Validate input dimensions
 if img.ndim != 4:
@@ -76,9 +79,46 @@ session.set_target_buffer(target_tensor)
 
 # Example: Add a **positive** point interaction
 # POINT_COORDINATES should be a tuple (x, y, z) specifying the point location.
-POINT_COORDINATES = (87, 100, 166)  # Example coordinates
-session.add_point_interaction(POINT_COORDINATES, include_interaction=True)
+POSITIVE_POINTS = [
+    # (100, 125, 127),
+    # (30, 125, 127),
+    # (90, 65, 127),
+    # (40, 65, 127),
+    (80, 284, 275),
+    (80, 206, 320),
+    (80, 248, 325),
+    (80, 217, 261),
+    (80, 234, 242),
+    (80, 266, 263),
+    # (211, 292, 69),
+    # (207, 348, 69),
+    # (246, 313, 72),
+    # (249, 277, 74),
+    # (264, 274, 78),
+]  # Example coordinates
+for POINT in POSITIVE_POINTS:
+    session.add_point_interaction(POINT, include_interaction=True)
 
+NEGATIVE_POINTS = [
+    # (111, 147, 127),
+    # (118, 106, 127),
+    # (104, 48, 127),
+    # (80, 23, 127),
+    # (41, 30, 127),
+    # (27, 47, 127),
+    # (12, 94, 127),
+    # (13, 123, 127),
+    # (52, 158, 127),
+    # (82, 157, 127),
+    (80, 285, 371),
+    (80, 327, 270),
+    (80, 271, 210),
+    (80, 167, 200),
+    (80, 150, 335),
+    (80, 207, 377),
+]  # Example coordinates
+for POINT in NEGATIVE_POINTS:
+    session.add_point_interaction(POINT, include_interaction=False)
 # # Example: Add a **negative** point interaction
 # # To make any interaction negative set include_interaction=False
 # session.add_point_interaction(POINT_COORDINATES, include_interaction=False)
@@ -125,8 +165,10 @@ results = target_tensor.clone()
 # -----------------------------------------------------------------------------
 # Save results as NRRD
 # Example: Save results as Sly Annotation
+res  = results.numpy().astype('uint8') # z, x, y
+res = res.transpose(1, 2, 0) # to x, y, z
 volume_info = api.volume.get_info_by_id(volume_id)
-mask = sly.Mask3D(data=results.numpy(), volume_header=volume_meta)
+mask = sly.Mask3D(data=res > 0, volume_header=volume_meta)
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 test_cls = project_meta.get_obj_class("test")
 if test_cls is None:
