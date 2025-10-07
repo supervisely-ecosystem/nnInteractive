@@ -3,17 +3,6 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/usr/src/tensorrt/bin:${PATH}"
 
-##############################################################################
-# Miniconda & python 3.12
-##############################################################################
-RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-py312_25.7.0-2-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -bfp /usr/local \
-    && rm -rf /tmp/miniconda.sh \
-    && conda install -y python=3.12
-
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
@@ -29,9 +18,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libexiv2-dev \
     libboost-all-dev
 
+##############################################################################
+# Miniconda & python 3.12
+##############################################################################
+RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-py312_25.7.0-2-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -bfp /usr/local \
+    && rm -rf /tmp/miniconda.sh \
+    && conda install -y python=3.12
+
+RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
 # RUN ln -s /usr/bin/python3 /usr/bin/python \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
 
 # Install Dependencies
 RUN pip3 install --no-cache-dir setuptools==69.5.1
