@@ -9,6 +9,7 @@ import SimpleITK as sitk
 import torch
 from dotenv import load_dotenv
 from fastapi import Request, Response, status
+from fastapi.responses import StreamingResponse
 from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
 from src.cache import InferenceVolumeCache
 
@@ -19,6 +20,7 @@ from supervisely.app.content import get_data_dir
 from supervisely.imaging.color import generate_rgb
 from supervisely.nn.inference.inference import Inference, InferenceImageCache
 from supervisely.nn.utils import CheckpointInfo, ModelSource
+from supervisely.api.volume.volume_api import VolumeInfo
 from supervisely.sly_logger import logger
 from supervisely.volume_annotation.plane import Plane
 
@@ -29,41 +31,42 @@ def send_volume_is_downloading_notification(func):
         request: Request = args[0]
         context = request.state.context
         api: sly.Api = request.state.api
-        volume_id = context["volumeId"]
+        volume_id = context["volume"]["volume_id"]
+        value = None
         try:
-            api.post(
-                "volumes.notify-annotation-tool",
-                data={
-                    "type": "volumes:volume-downloading-started",
-                    "data": {
-                        "volumeId": volume_id,
-                    },
-                },
-            )
+            # api.post(
+            #     "volumes.notify-annotation-tool",
+            #     data={
+            #         "type": "volumes:volume-downloading-started",
+            #         "data": {
+            #             "volumeId": volume_id,
+            #         },
+            #     },
+            # )
             value = func(*args, **kwargs)
         except Exception as exc:
             raise exc
         finally:
-            api.post(
-                "volumes.notify-annotation-tool",
-                data={
-                    "type": "volumes:volume-downloading-completed",
-                    "data": {
-                        "volumeId": volume_id,
-                    },
-                },
-            )
-        return value
+            # api.post(
+            #     "volumes.notify-annotation-tool",
+            #     data={
+            #         "type": "volumes:volume-downloading-completed",
+            #         "data": {
+            #             "volumeId": volume_id,
+            #         },
+            #     },
+            # )
+            return value
 
     return wrapper
 
 
-@send_volume_is_downloading_notification
+# @send_volume_is_downloading_notification
 def download_volume_from_context(
     request: Request,
     context: dict,
     api: sly.Api,
-    cache: InferenceImageCache = None,
+    cache: InferenceVolumeCache = None,
 ) -> str:
     if "volume_id" in context:
         if cache is not None:
@@ -81,7 +84,7 @@ def download_volume_from_context(
         raise Exception("Project type is not supported")
 
 
-def get_hash_from_context(context: dict):
+def get_id_from_context(context: dict):
     if "volume" in context:
         volume_id = context["volume"]["volume_id"]
         # slice_index = context["volume"]["slice_index"]
@@ -90,7 +93,7 @@ def get_hash_from_context(context: dict):
         # window_width = context["volume"]["window_width"]
         # plane = sly.Plane.get_name(normal)
         # return "_".join(map(str, [volume_id, slice_index, plane, window_center, window_width]))
-        return str(volume_id)
+        return volume_id
     else:
         raise Exception("Project type is not supported")
 
@@ -138,37 +141,36 @@ class nnInteractiveSlyInference(Inference):
         if model_path.exists():
             local_model_files[file_name] = str(model_path)
             logger.debug(f"Model: '{file_name}' was found in model dir")
-            return local_model_files
+            return str(model_path)
         if cached_path.exists():
             local_model_files[file_name] = str(cached_path)
             logger.debug(f"Model: '{file_name}' was found in checkpoint cache")
-            return local_model_files
+            return str(cached_path)
 
         from huggingface_hub import snapshot_download
 
         logger.debug(f"Model: '{file_name}' was found in model dir")
         snapshot_download(
-            repo_id=repo_id, allow_patterns=[f"{file_name}"], local_dir=self.model_dir
+            repo_id=repo_id, allow_patterns=[f"{file_name}/*"], local_dir=self.model_dir
         )
         local_model_files[file_name] = str(model_path)
 
         if log_progress:
             if self.gui is not None:
                 self.gui.download_progress.hide()
-        return local_model_files
+        return str(model_path)
 
-    def load_on_device():
-        pass
+    def load_on_device(self, device: str):
+        self.model.to(device)
 
-    def load_model(
-        self, model_files: dict, model_info: dict, model_source: str, device: str, runtime: str
-    ):
+    def load_model(self, model_files: dict, model_info: dict, model_source: str, device: str):
         if model_source == ModelSource.CUSTOM:
             # self.class_names = ["object_mask"]  # TODO: get class names from custom model
             checkpoint_path = self._prepare_custom_model(model_files)
         else:
             self.class_names = ["object_mask"]
-            checkpoint_path = self._prepare_pretrained_model(model_files, model_info)
+            # checkpoint_path = self._prepare_pretrained_model(model_files, model_info)
+            checkpoint_path = self._download_pretrained_model(model_files)
 
         self.model = nnInteractiveInferenceSession(
             device=torch.device(device),
@@ -179,6 +181,8 @@ class nnInteractiveSlyInference(Inference):
             use_pinned_memory=True,  # Optimizes GPU memory transfers
         )
         self.model.initialize_from_trained_model_folder(checkpoint_path)
+
+        self._model_served = True
 
     @property
     def model_meta(self):
@@ -230,7 +234,6 @@ class nnInteractiveSlyInference(Inference):
 
     def predict(self, image_path: str, settings: Dict[str, Any]) -> List[sly.nn.PredictionMask]:
         # prepare input data
-        input_image = sly.image.read(image_path)
         slice_index = settings.get("slice_index", None)
         # list for storing preprocessed masks
         predictions = []
@@ -299,7 +302,8 @@ class nnInteractiveSlyInference(Inference):
 
             # with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
             for POINT, LABEL in zip(point_coordinates, point_labels):
-                self.model.add_point_interaction(POINT, include_interaction=bool(LABEL))
+                coords = (POINT[0], POINT[1], slice_index)
+                self.model.add_point_interaction(coords, include_interaction=bool(LABEL))
             results = self.model.target_buffer.clone()
             results = results.numpy().astype("uint8")
             predictions.append(
@@ -367,7 +371,6 @@ class nnInteractiveSlyInference(Inference):
         server = self._app.get_server()
 
         @server.post("/smart_segmentation")
-        @send_error_data
         def smart_segmentation(response: Response, request: Request):
             # 1. parse request
             # 2. download image
@@ -408,21 +411,38 @@ class nnInteractiveSlyInference(Inference):
             uncropped_clicks += [{**click, "is_positive": False} for click in negative_clicks]
 
             # download image if needed (using cache)
-            app_dir = get_data_dir()
-            hash_str = get_hash_from_context(smtool_state)
+            volume_id = get_id_from_context(smtool_state)
+            hash_str = self.cache._volume_name(volume_id)
 
-            if hash_str not in self.cache:
-                logger.debug(f"downloading image: {hash_str}")
+            if hash_str not in self.cache._cache:
+                logger.debug(f"downloading volume: {hash_str}")
                 volume_path = download_volume_from_context(
                     request,
                     smtool_state,
                     api,
                     self.cache,
                 )
-                self.cache._cache.save_volume(hash_str, volume_path)
+                # self.cache._cache.save_volume(hash_str, volume_path)
             else:
                 logger.debug(f"volume found in cache: {hash_str}")
                 volume_path = self.cache.get_volume_path(hash_str)
+
+            _, volume_meta = sly.volume.read_nrrd_serie_volume_np(volume_path)
+
+            if len(uncropped_clicks) == 1:
+                if self.model.target_buffer is not None and self.model.interactions is not None:
+                    self.model.reset_interactions()
+                input_image = sitk.ReadImage(volume_path)
+                img = sitk.GetArrayFromImage(input_image)  # (139, 512, 512)
+                img = img.transpose(2, 1, 0)[None]  # to (1, 512, 512, 139)
+
+                if img.ndim != 4:
+                    raise ValueError("Input image must be 4D with shape (1, x, y, z)")
+                self.model.set_image(img)
+                target_tensor = torch.zeros(
+                    img.shape[1:], dtype=torch.uint8
+                )  # Must be 3D (x, y, z)
+                self.model.set_target_buffer(target_tensor)
 
             self._inference_image_lock.acquire()
             try:
@@ -433,13 +453,13 @@ class nnInteractiveSlyInference(Inference):
                 #     settings["mode"] = "combined"
                 # else:
                 #     settings["mode"] = "points"
-                volume_id = smtool_state.get("volume").get("volume_id")
                 if self.process_volume:
                     volume_plane = (
                         sly.Plane.get_name(smtool_state.get("volume").get("normal")) or "Unknown"
                     )
                     slice_idx = smtool_state.get("volume").get("slice_index")
                     settings["input_image_id"] = f"{volume_id}_{volume_plane}_{slice_idx}"
+                    settings["slice_index"] = slice_idx
 
                 point_coordinates, point_labels = [], []
                 for click in uncropped_clicks:
@@ -462,22 +482,52 @@ class nnInteractiveSlyInference(Inference):
                 volume_info = api.volume.get_info_by_id(volume_id)
                 mask = sly.Mask3D(data=pred_mask > 0)
 
-                # ann = api.volume.annotation.download(volume_id)
-                obj_cls = self.model_meta.get_obj_class(self.get_classes()[0])
-                obj = sly.VolumeObject(obj_class=obj_cls, mask_3d=mask)
-                volume_ann = sly.VolumeAnnotation(
-                    volume_info.meta,
-                    objects=[obj],
-                    spatial_figures=[obj.figure],
+                # save temp nrrd file
+                volume_bytes = sly.volume.encode(pred_mask, volume_meta)
+
+                # Create chunk generator
+                def generator():
+                    chunk_size = 1048576
+                    for i in range(0, len(volume_bytes), chunk_size):
+                        yield volume_bytes[i : i + chunk_size]
+
+                print(request.headers.get("x-request-uid", ""))
+                print(request.headers.get("x-request-id", ""))
+                response = StreamingResponse(
+                    generator(),
+                    media_type="application/octet-stream",
+                    headers={
+                        "Content-Disposition": "attachment; filename=interpolation.nrrd",
+                        "Content-Type": "application/octet-stream",
+                        "x-request-id": request.scope["state"]["context"]["request_uid"],
+                    },
                 )
-                api.volume.annotation.append(volume_info.id, volume_ann)
-                sly.logger.debug(f"Smart segmentation annotation appended to volume {volume_id}")
-                response = {
-                    "origin": None,
-                    "bitmap": None,
-                    "success": True,
-                    "error": None,
-                }
+
+                # ann = api.volume.annotation.download(volume_id)
+                # obj_cls = self.model_meta.get_obj_class(self.get_classes()[0])
+                # meta = sly.ProjectMeta.from_json(api.project.get_meta(volume_info.project_id))
+                # if not meta.obj_classes.has_key(obj_cls.name):
+                #     meta = meta.add_obj_class(obj_cls)
+                #     meta = api.project.update_meta(volume_info.project_id, meta)
+                # elif meta.get_obj_class(obj_cls.name).geometry_type != sly.Mask3D:
+                #     obj_cls = sly.ObjClass(obj_cls.name + "_mask3d", geometry_type=sly.Mask3D)
+                #     meta = meta.add_obj_class(obj_cls)
+                #     meta = api.project.update_meta(volume_info.project_id, meta)
+                # obj = sly.VolumeObject(obj_class=obj_cls, mask_3d=mask)
+                # volume_ann = sly.VolumeAnnotation(
+                #     volume_info.meta,
+                #     objects=[obj],
+                #     spatial_figures=[obj.figure],
+                # )
+                # api.volume.annotation.append(volume_info.id, volume_ann)
+                # sly.logger.debug(f"Smart segmentation annotation appended to volume {volume_id}")
+                # bitmap = sly.Mask3D.data_2_base64(mask.data)
+                # response = {
+                #     "origin": None,
+                #     "bitmap": bitmap,
+                #     "success": True,
+                #     "error": None,
+                # }
             else:
                 logger.debug(f"Predicted mask is empty.")
                 response = {
@@ -533,7 +583,7 @@ NOTIFY_SLEEP_TIME = 0.1
 
 m = nnInteractiveSlyInference(
     use_gui=False,
-    model_dir="app_data",
+    model_dir="test_data",
 )
 
 
@@ -543,7 +593,19 @@ m = nnInteractiveSlyInference(
 #     sly.fs.remove_dir("frames")
 #     sly.logger.info("Successfully cleaned unnecessary app data")
 
-
+deploy_params = {
+    "model_source": ModelSource.PRETRAINED,
+    "model_files": {"checkpoint": "nnInteractive/nnInteractive/nnInteractive_v1.0"},
+    "model_info": {
+        "Model": "nnInteractive_v1.0",
+        "meta": {
+            "task_type": "instance segmentation",
+            "model_name": "nnInteractive_v1.0",
+            "model_files": {"checkpoint": "nnInteractive/nnInteractive/nnInteractive_v1.0"},
+        },
+    },
+    "device": "cuda:0",
+}
+m.load_model(**deploy_params)
 m.serve()
-m.gui._models_table.select_row(1)
 # m.app.call_before_shutdown(clean_data)

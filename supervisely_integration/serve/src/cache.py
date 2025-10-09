@@ -3,13 +3,14 @@ import time
 from enum import Enum
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
-
+from cachetools import TTLCache
 from fastapi import UploadFile
 
 from supervisely._utils import rand_str
 from supervisely.api.api import Api
 from supervisely.api.volume.volume_api import VolumeInfo
 from supervisely.io.fs import silent_remove
+import supervisely.io.env as sly_env
 from supervisely.nn.inference.cache import InferenceImageCache, PersistentImageTTLCache
 from supervisely.project.project_meta import ProjectMeta
 from supervisely.sly_logger import logger
@@ -21,7 +22,7 @@ class PersistentVolumeTTLCache(PersistentImageTTLCache):
         if not self._base_dir.exists():
             self._base_dir.mkdir()
 
-        filepath = self._base_dir / Path(f"volume_{key.rstrip('.nrrd')}.nrrd")
+        filepath = self._base_dir / Path(f"volume_{key}.nrrd")
         self[key] = filepath
 
         if filepath.exists():
@@ -30,8 +31,8 @@ class PersistentVolumeTTLCache(PersistentImageTTLCache):
             with open(filepath, "wb") as f:
                 f.write(source)
         else:
-            with open(filepath, "wb") as f:
-                shutil.copyfileobj(source, f)
+            with open(source, "rb") as fsrc, open(filepath, "wb") as fdst:
+                shutil.copyfileobj(fsrc, fdst)
 
     def get_volume_path(self, key: Any) -> Path:
         return self[key]
@@ -45,13 +46,29 @@ class InferenceVolumeCache(InferenceImageCache):
         Video: str = "VIDEO"
         Volume: str = "VOLUME"
 
+    def __init__(
+        self,
+        maxsize: int,
+        ttl: int,
+        is_persistent: bool = True,
+        base_folder: str = sly_env.smart_cache_container_dir(),
+        log_progress: bool = False,
+    ):
+        super().__init__(maxsize, ttl, is_persistent, base_folder, log_progress)
+        if is_persistent:
+            self._data_dir = Path(base_folder)
+            self._data_dir.mkdir(parents=True, exist_ok=True)
+            self._cache = PersistentVolumeTTLCache(maxsize, ttl, self._data_dir)
+        else:
+            self._cache = TTLCache(maxsize, ttl)
+
     def cache_task(self, api: Api, state: dict):
         if "server_address" in state and "api_token" in state:
             api = Api(state["server_address"], state["api_token"])
         api.logger.debug("Request state in cache endpoint", extra=state)
         image_ids, task_type = self._parse_state(state)
         kwargs = {"return_images": False}
-        if task_type is InferenceImageCache._LoadType.Volume:
+        if task_type is InferenceVolumeCache._LoadType.Volume:
             volume_id = image_ids
             self.download_volume(api, volume_id, **kwargs)
 
@@ -59,7 +76,7 @@ class InferenceVolumeCache(InferenceImageCache):
         logger.debug("Request state in cache endpoint", extra=state)
         image_ids, task_type = self._parse_state(state)
 
-        if task_type is InferenceImageCache._LoadType.Volume:
+        if task_type is InferenceVolumeCache._LoadType.Volume:
             volume_id = image_ids
             self._wait_if_in_queue(volume_id, logger)
             self._load_queue.set(volume_id, volume_id)
@@ -108,8 +125,11 @@ class InferenceVolumeCache(InferenceImageCache):
 
     def _parse_state(self, state: dict) -> Tuple[List[Any], _LoadType]:
         if "volume_id" in state:
-            return state["volume_id"], InferenceImageCache._LoadType.Volume
+            return state["volume_id"], InferenceVolumeCache._LoadType.Volume
         raise ValueError("State has no proper fields: 'volume_id'")
+
+    def _volume_name(self, volume_id: int) -> str:
+        return f"volume_{volume_id}"
 
     def download_volume(self, api: Api, volume_id: int, **kwargs):
         name = self._volume_name(volume_id)
@@ -167,7 +187,7 @@ class InferenceVolumeCache(InferenceImageCache):
                 )
                 silent_remove(temp_volume_path)
             except Exception as e:
-                self._load_queue.delete(volume_id)
+                self._load_queue.delete(name)
                 raise e
 
         return self._cache.get_volume_path(name)
@@ -178,11 +198,14 @@ class InferenceVolumeCache(InferenceImageCache):
         """
         if isinstance(self._cache, PersistentVolumeTTLCache):
             with self._lock:
-                self._cache.save_volume(volume_id, source)
-                self._load_queue.delete(volume_id)
+                key = self._volume_name(volume_id)
+                self._cache.save_volume(key, source)
+                self._load_queue.delete(key)
             logger.debug(f"Volume #{volume_id} added to cache", extra={"volume_id": volume_id})
         else:
             raise ValueError("Volume can be added only to persistent cache")
 
-    def get_volume_path(self, key) -> str:
+    def get_volume_path(self, key: Union[int, str]) -> str:
+        if isinstance(key, int):
+            key = self._volume_name(key)
         return str(self._cache.get_volume_path(key))
